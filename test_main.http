@@ -1,0 +1,16 @@
+# Test your FastAPI endpoints
+
+### App Info
+
+GET http://127.0.0.1:8000/
+Accept: application/json
+
+### Get Today's Wallpaper
+
+GET http://127.0.0.1:8000/wallpaper
+Accept: application/json
+
+### Get Wallpapaer by Date
+### GET http://127.0.0.1:8000/wallpaper/{year}/{month}/{day}
+GET http://127.0.0.1:8000/wallpaper/2022/01/01
+Accept: application/json
