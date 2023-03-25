@@ -5,7 +5,7 @@ A simple API Wrapper for [Bing Wallpaper](https://www.microsoft.com/en-us/bing/b
 ### 🚝 Run
 
 - Create a .env file from .env.example above in the root folder.
-- This app uses the MongoDB to store the alredy parsed image date you might want to use a local or a remove version of MongoDB.
+- This app uses the MongoDB to store the alredy parsed image data. you might want to use a local or a remote version of MongoDB.
     
     `pip3 install -r requirements.txt`  
     `python3 app.py`
