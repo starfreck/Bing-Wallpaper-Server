@@ -4,3 +4,4 @@ python-dotenv
 pymongo~=4.3.3
 flask~=2.2.3
 gunicorn
+Flask-PyMongo
