@@ -65,6 +65,7 @@ def get_wallpaper_from_date(year, month, day):
 def get_wallpaper(request: request, year: int, month: int, day: int):
     
     ip = request.remote_addr
+    print("IP Address:",ip)
     ip_info = get_location(ip)
 
     bing = BingWallpaper(mongo.db.bing_store, ip_info['country_name'], year, month, day)
