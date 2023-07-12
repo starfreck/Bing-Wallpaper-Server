@@ -25,27 +25,26 @@ class BingWallpaper:
         "Italy": "it",
     }
 
-    def __init__(self, bing_store, country_name, year, month, day):
+    def __init__(self, bing_store, location, year, month, day):
 
-        if country_name in self.country_code:
-            self.location = self.country_code[country_name]
+        if location in self.country_code.values():
+            self.location = location
         else:
             self.location = self.country_code['United States']
 
         self.bing_store = bing_store
         self.year = year
         self.month = month
-        self.date = x = datetime(year, month, day)
-
+        self.date = datetime(year, month, day)
         self.day = self.date.strftime("%B %d")
-
         self.URL = f"{PEAPIX_URL}/{self.location}/{self.year}/{self.month}"
+        print(self.URL)
 
     def get_images(self):
         date = self.date.strftime('%Y-%m-%d')
 
         # Find from the DB
-        result = self.bing_store.find_one({"date": date})
+        result = self.bing_store.find_one({ "date": date, "location": self.location })
         if result is not None:
             del result['_id']
             return result
@@ -65,7 +64,7 @@ class BingWallpaper:
                     '%Y-%m-%d')
                 image_url = url_element['data-bgset'].strip().replace("_480", "")
 
-                if self.bing_store.find_one({"date": image_date}) is None:
+                if self.bing_store.find_one({ "date": image_date, "location": self.location }) is None:
                     print("Adding entry for ", image_date, "...")
                     result = {"title": image_title, "date": image_date,
                               "location": self.location, "url": image_url}

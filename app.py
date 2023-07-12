@@ -3,7 +3,6 @@ import datetime
 from flask import Flask, request
 from flask_pymongo import PyMongo
 
-from ip_info import get_location
 from bing_wallpaper import BingWallpaper
 from db import get_db_conn_str as db_string
 
@@ -18,28 +17,30 @@ def root():
     return {
         "status": 1,
         "app_name": "Bing-Wallpaper-Server",
-        "message": "Countries are automatically selected by the IP address...",
+        "message": "Welcome to Bing Wallpaper APIs !!",
+        "docs": "https://github.com/starfreck/Bing-Wallpaper-Server",
         "default_country": "United States",
-        "supported_countries": [
-            "Australia",
-            "Canada",
-            "China",
-            "Germany",
-            "France",
-            "India",
-            "Japan",
-            "Spain",
-            "United Kingdom",
-            "United States",
-            "Italy"
-        ]
+        "supported_countries": {
+            "Australia": "au",
+            "Canada": "ca",
+            "China": "cn",
+            "Germany": "de",
+            "France": "fr",
+            "India": "in",
+            "Japan": "jp",
+            "Spain": "es",
+            "United Kingdom": "gb",
+            "United States": "us",
+            "Italy": "it",
+        }
     }
 
 
 @app.route('/wallpaper', methods=['GET'])
 def get_today_s_wallpaper():
     today = datetime.datetime.now()
-    return get_wallpaper(request, today.year, today.month, today.day)
+    location = request.args.get('location')
+    return get_wallpaper(location, today.year, today.month, today.day)
 
 
 @app.route('/wallpaper/<year>/<month>/<day>', methods=['GET'])
@@ -47,6 +48,7 @@ def get_wallpaper_from_date(year, month, day):
     day = int(day)
     month = int(month)
     year = int(year)
+    location = request.args.get('location')
 
     if year < 2010:
         return {'status': 0, 'message': 'Invalid Year! Only the period from 2010 onward is supported!'}
@@ -59,20 +61,15 @@ def get_wallpaper_from_date(year, month, day):
     elif is_future_date(year, month, day):
         return {'status': 0, 'message': 'Future Date!'}
     else:
-        return get_wallpaper(request, year, month, day)
+        return get_wallpaper(location, year, month, day)
 
 
-def get_wallpaper(request: request, year: int, month: int, day: int):
-    
-    ip = request.remote_addr
-    print("IP Address:",ip)
-    ip_info = get_location(ip)
-
-    bing = BingWallpaper(mongo.db.bing_store, ip_info['country_name'], year, month, day)
+def get_wallpaper(location: str, year: int, month: int, day: int):
+    bing = BingWallpaper(mongo.db.bing_store, location, year, month, day)
     return {
         'status': 1,
         'message': 'ok',
-        'ip_info': ip_info,
+        'location': 'us' if location is None else location,
         'date': f'{str(year)}/{str(month)}/{str(day)}',
         'wallpaper': bing.get_images()
     }
