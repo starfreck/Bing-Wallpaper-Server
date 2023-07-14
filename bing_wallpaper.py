@@ -74,7 +74,7 @@ class BingWallpaper:
                     print(result)
 
                 # Check if it's the matched date
-                if self.date == image_date:
+                if date == image_date:
                     return result
 
         # If it cannot find the date then check for the Yesterday's
