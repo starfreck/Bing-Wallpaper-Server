@@ -49,8 +49,9 @@ class BingWallpaper:
     def get_image_from_web(self):
         response = None
 
-        page = requests.get(self.URL)
-        html = page.content.decode('utf-8')
+        headers = {"User-Agent": "curl/7.81.0"}
+        page    = requests.get(self.URL, headers=headers)
+        html    = page.content.decode('utf-8')
 
         # Find all matches for each pattern
         image_matches   = self.image_regex.findall(html)
