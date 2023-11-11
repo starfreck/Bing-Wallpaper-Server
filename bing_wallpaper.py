@@ -1,7 +1,7 @@
 import os
+import re
 import requests
 from datetime import datetime, timedelta
-from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -24,6 +24,11 @@ class BingWallpaper:
         "United States": "us",
         "Italy": "it",
     }
+    # Valid regex patterns
+    image_regex = re.compile(r'<div class="image-list__container">([\s\S]*?)</div>')
+    title_regex = re.compile(r'<h4 class="image-list__title">([\s\S]*?)</h4>')
+    date_regex  = re.compile(r'<span class="text-gray">([\s\S]*?)</span>')
+    url_regex   = re.compile(r'data-bgset="([\s\S]*?)"')
 
     def __init__(self, bing_store, location, year, month, day):
 
@@ -33,49 +38,70 @@ class BingWallpaper:
             self.location = self.country_code['United States']
 
         self.bing_store = bing_store
-        self.year = year
-        self.month = month
-        self.date = datetime(year, month, day)
-        self.day = self.date.strftime("%B %d")
-        self.URL = f"{PEAPIX_URL}/{self.location}/{self.year}/{self.month}"
+        self.year       = year
+        self.month      = month
+        self.date       = datetime(year, month, day)
+        self.day        = self.date.strftime("%B %d")
+        self.URL        = f"{PEAPIX_URL}/{self.location}/{self.year}/{self.month}"
+
         print(self.URL)
 
+    def get_image_from_web(self):
+        response = None
+
+        page = requests.get(self.URL)
+        html = page.content.decode('utf-8')
+
+        # Find all matches for each pattern
+        image_matches   = self.image_regex.findall(html)
+        title_matches   = self.title_regex.findall(html)
+        date_matches    = self.date_regex.findall(html)
+        url_matches     = self.url_regex.findall(html)
+
+        title_matches   = [title.strip() for title in title_matches]
+        date_matches    = [datetime.strptime(str(self.year) + " " + date, "%Y %B %d").strftime('%Y-%m-%d') for date in date_matches]
+        url_matches     = [url.strip().replace("_480", "") for url in url_matches]
+
+        # Extract information from the matches
+        images = []
+
+        for i in range(len(image_matches)):
+            url = url_matches[i].split(' ')[0]
+            images.append({
+                'title' : title_matches[i].strip(),
+                'date'  : date_matches[i].strip(),
+                'url'   : url
+            })
+
+        # Print the extracted information
+        for image in images:
+            # Check if it's already in the DB
+            if self.bing_store.find_one({"date": image['date'], "location": self.location}) is None:
+                print("Adding entry for ", image['date'], "...")
+                result = {"title": image['title'], "date": image['date'], "location": self.location, "url": image['url']}
+                self.bing_store.insert_one(result)
+                # Do not print the _id from DB
+                del result['_id']
+                print(result)
+
+            # Check if it's the matched date then store it and return it later
+            if image['date'] == self.date.strftime('%Y-%m-%d'):
+                response = result
+
+        return response
+
     def get_images(self):
-        date = self.date.strftime('%Y-%m-%d')
 
         # Find from the DB
-        result = self.bing_store.find_one({ "date": date, "location": self.location })
+        result = self.bing_store.find_one({"date": self.date.strftime('%Y-%m-%d'), "location": self.location})
+        
         if result is not None:
             del result['_id']
             return result
         else:
-            page = requests.get(self.URL)
-            soup = BeautifulSoup(page.content, "html.parser")
-            images = soup.find_all("div", class_="image-list__container")
-
-            for image in images:
-
-                title_element = image.find("h4", class_="image-list__title")
-                date_element = image.find("span", class_="text-gray")
-                url_element = image.find("div", class_="image-list__picture")
-
-                image_title = title_element.text.strip()
-                image_date = datetime.strptime(str(self.year) + " " + date_element.text, "%Y %B %d").strftime(
-                    '%Y-%m-%d')
-                image_url = url_element['data-bgset'].strip().replace("_480", "")
-
-                if self.bing_store.find_one({ "date": image_date, "location": self.location }) is None:
-                    print("Adding entry for ", image_date, "...")
-                    result = {"title": image_title, "date": image_date,
-                              "location": self.location, "url": image_url}
-                    self.bing_store.insert_one(result)
-                    # Do not print the _id from DB
-                    del result['_id']
-                    print(result)
-
-                # Check if it's the matched date
-                if date == image_date:
-                    return result
+            response = self.get_image_from_web()
+            if response is not None:
+                return response
 
         # If it cannot find the date then check for the Yesterday's
         self.date = datetime.today() - timedelta(days=1)
