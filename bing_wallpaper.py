@@ -23,7 +23,10 @@ class BingWallpaper:
         "United Kingdom": "gb",
         "United States": "us",
         "Italy": "it",
+        "Brazil": "br",
     }
+    # Headers for the request
+    headers = {"User-Agent": os.getenv('USER_AGENT') }
     # Valid regex patterns
     image_regex = re.compile(r'<div class="image-list__container">([\s\S]*?)</div>')
     title_regex = re.compile(r'<h4 class="image-list__title">([\s\S]*?)</h4>')
@@ -49,8 +52,7 @@ class BingWallpaper:
     def get_image_from_web(self):
         response = None
 
-        headers = {"User-Agent": "curl/7.81.0"}
-        page    = requests.get(self.URL, headers=headers)
+        page    = requests.get(self.URL, headers=self.headers)
         html    = page.content.decode('utf-8')
 
         # Find all matches for each pattern

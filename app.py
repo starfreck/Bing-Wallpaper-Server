@@ -32,6 +32,7 @@ def root():
             "United Kingdom": "gb",
             "United States": "us",
             "Italy": "it",
+            "Brazil": "br",
         }
     }
 
